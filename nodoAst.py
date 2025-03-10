@@ -1,64 +1,51 @@
-import Analizador
-
-# Ejemplo de uso
-codigo_fuente = """
-int suma(int a, int b) {
-
-    int x = a + b * 2;
-    int y = x - 5;
-    return y;
-}
-
-"""
-
-import json
 class NodoAST:
-    #Clase base para todos los nodos del AST
     pass
+
 class NodoFuncion(NodoAST):
-    #Nodo que representa una funcion
-    def _init_(self, nombre, parametros,cuerpo):
+    def __init__(self, nombre, parametros, cuerpo):
         self.nombre = nombre
         self.parametros = parametros
         self.cuerpo = cuerpo
-    
 
-class NodeParametro(NodoAST):
-    #Nodo que representa un parámetro de función
-    def _init_(self, tipo, nombre):
+class NodoParametro(NodoAST):
+    def __init__(self, tipo, nombre):
         self.tipo = tipo
         self.nombre = nombre
 
 class NodoAsignacion(NodoAST):
-    def _init_(self, nombre, expresion):
+    def __init__(self, nombre, expresion):
         self.nombre = nombre
         self.expresion = expresion
 
 class NodoOperacion(NodoAST):
-    def _init_(self, izquierda, operador, derecha):
+    def __init__(self, izquierda, operador, derecha):
         self.izquierda = izquierda
         self.operador = operador
         self.derecha = derecha
 
 class NodoRetorno(NodoAST):
-    #Nodo que representa a la sentencia return
-    def _init_(self, expresion):
+    def __init__(self, expresion):
         self.expresion = expresion
-        
+
 class NodoIdentificador(NodoAST):
-    def _init_(self, nombre):
+    def __init__(self, nombre):
         self.nombre = nombre
 
 class NodoNumero(NodoAST):
-    def _init_(self, valor):
+    def __init__(self, valor):
         self.valor = valor
+
+# -----------------------------
+# FUNCION PARA IMPRIMIR AST
+# -----------------------------
+import json
 
 def imprimir_ast(nodo):
     if isinstance(nodo, NodoFuncion):
         return {'Funcion': nodo.nombre,
                 'Parametros': [imprimir_ast(p) for p in nodo.parametros],
                 'Cuerpo': [imprimir_ast(c) for c in nodo.cuerpo]}
-    elif isinstance(nodo, NodeParametro):
+    elif isinstance(nodo, NodoParametro):
         return {'Parametro': nodo.nombre, 'Tipo': nodo.tipo}
     elif isinstance(nodo, NodoAsignacion):
         return {'Asignacion': nodo.nombre,
@@ -75,10 +62,12 @@ def imprimir_ast(nodo):
         return {'Numero': nodo.valor}
     return {}
 
-
-arbolast = NodoFuncion("suma", 
-    [NodeParametro("int", "a"), NodeParametro("int", "b")], 
+# -----------------------------
+# EJEMPLO DE USO
+# -----------------------------
+arbol_ast = NodoFuncion("suma", 
+    [NodoParametro("int", "a"), NodoParametro("int", "b")], 
     [NodoRetorno(NodoOperacion(NodoIdentificador("a"), "+", NodoIdentificador("b")))]
 )
 
-print(json.dumps(imprimir_ast(arbolast),indent=1))
+print(json.dumps(imprimir_ast(arbol_ast), indent=2))
