@@ -1,6 +1,7 @@
 import re
 from nodos import *
 import json
+from keystone import Ks, KS_ARCH_X86, KS_MODE_32, KS_MODE_16
 
 # === Analisis Lexico ===
 # Definir los patrones para los diferentes tipos de tokens
@@ -257,8 +258,8 @@ class Parser:
         else:
             raise SyntaxError(f"Error sintáctico: Se esperaba STRING o IDENTIFIER, pero se encontro {token_actual}")
         while self.obtener_token_actual() and self.obtener_token_actual()[1] == ',':
-            self.coincidir('DELIMITER')  # Se espera un ,
-            self.expresion()  # Puede ser un identificador o numero
+            self.coincidir('DELIMITER')
+            self.expresion()
 
         self.coincidir('DELIMITER')
         self.coincidir('DELIMITER')
@@ -389,3 +390,64 @@ arbol_ast = parser.parsear()
 print(json.dumps(imprimir_ast(arbol_ast), indent=1))
 codigo_asm = arbol_ast.generar_codigo()
 print(codigo_asm)
+
+
+def ensamblador_a_maquina2(codigo_asm):
+    instrucciones = {
+        'push ebp': '55',
+        'mov ebp, esp': '89 E5',
+        'pop ebx': '5B',
+        'pop ebp': '5D',
+        'add eax, ebx': '01 D8',
+        'ret': 'C3',
+        'mov esp, ebp': '89 EC',
+    }
+    variables = {
+        '[a]': '00 00 00 00',
+        '[b]': '04 00 00 00',
+        '[c]': '08 00 00 00',
+        '[suma]': '0C 00 00 00',
+        '[resultado]': '10 00 00 00',
+    }
+
+    codigo_maquina = []
+    lineas = [line.strip() for line in codigo_asm.split('\n') if line.strip()]
+
+    for linea in lineas:
+        if linea.endswith(':'):
+            continue
+
+        if linea in instrucciones:
+            codigo_maquina.append(instrucciones[linea])
+        elif linea.startswith('mov eax, ['):
+            var = linea[linea.find('['):linea.find(']') + 1]
+            codigo_maquina.append(f"A1 {variables[var]}")
+        elif linea.startswith('mov [') and 'eax' in linea:
+            var = linea[linea.find('['):linea.find(']') + 1]
+            codigo_maquina.append(f"A3 {variables[var]}")
+        elif linea.startswith('mov eax, '):
+            valor = linea.split(', ')[1]
+            if valor.isdigit():
+                hex_val = f"{int(valor):04X}"
+                little_endian = ' '.join([hex_val[i:i + 2] for i in range(0, len(hex_val), 2)][::-1])
+                codigo_maquina.append(f"B8 {little_endian}")
+        elif linea == 'push eax':
+            codigo_maquina.append('50')
+        else:
+            codigo_maquina.append(f"; Instrucción no soportada: {linea}")
+
+    return ' '.join(codigo_maquina)
+
+
+def ensamblador_a_maquina(codigo_asm):
+    ks = Ks(KS_ARCH_X86, KS_MODE_16)
+
+    try:
+        encoding, _ = ks.asm(codigo_asm)
+        codigo_hex = ' '.join(f"{b:02X}" for b in encoding)
+        return codigo_hex
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+print(ensamblador_a_maquina(codigo_asm))
+#print(ensamblador_a_maquina(codigo_asm2))
