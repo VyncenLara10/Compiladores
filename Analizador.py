@@ -2,6 +2,7 @@ import re
 from nodos import *
 import json
 from keystone import Ks, KS_ARCH_X86, KS_MODE_32, KS_MODE_16
+from analizadroSemantico import *
 
 # === Analisis Lexico ===
 # Definir los patrones para los diferentes tipos de tokens
@@ -315,11 +316,8 @@ int suma(int a, int b) {
     int c = a + b;
     return c;
 }
-
-void main() {
-    int resultado = suma(4, 3);
-}
 """
+# =====Aqui es el fin de uso =====
 
 # Analisis lexico
 tokens = identificar_tokens(codigo_fuente)
@@ -328,14 +326,10 @@ for tipo, valor in tokens:
     print(f'{tipo}: {valor}')
 
 # Analisis Sintactico
-try:
-    print('\nIniciando analisis sintactico...')
-    parser = Parser(tokens)
-    arbol_ast = parser.parsear()
-    print('Analisis sintactico completado sin errores')
-
-except SyntaxError as e:
-    print(e)
+print('\nIniciando analisis sintactico...')
+parser = Parser(tokens)
+arbol_ast = parser.parsear()
+print('Analisis sintactico completado sin errores')
 
 
 def imprimir_ast(nodo):
@@ -385,8 +379,6 @@ def imprimir_ast(nodo):
     return {}
 
 
-parser = Parser(tokens)
-arbol_ast = parser.parsear()
 print(json.dumps(imprimir_ast(arbol_ast), indent=1))
 codigo_asm = arbol_ast.generar_codigo()
 print(codigo_asm)
@@ -450,4 +442,11 @@ def ensamblador_a_maquina(codigo_asm):
         return f"Error: {str(e)}"
 
 print(ensamblador_a_maquina(codigo_asm))
-#print(ensamblador_a_maquina(codigo_asm2))
+
+analizador_semantico = AnalizadorSemantico()
+analisis = analizador_semantico.analizar(arbol_ast)
+print(analisis)
+
+for llave in (analizador_semantico.tabla_simbolos.keys()):
+    valor = analizador_semantico.tabla_simbolos.get(llave)
+    print(f'{llave}:{valor}')
