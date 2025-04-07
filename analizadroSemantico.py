@@ -1,6 +1,9 @@
+from tabla_simbolo import TablaSimbolos
+
 class AnalizadorSemantico:
     def __init__(self):
-        self.tabla_simbolos = {}
+        self.tabla_simbolos = TablaSimbolos()
+        self.tabla_simbolos = TablaSimbolos()
 
     def analizar(self, nodo):
         metodo = f'visitar_{type(nodo).__name__}'
